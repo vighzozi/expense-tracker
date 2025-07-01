@@ -49,6 +49,7 @@ def add_data():
     except Exception as e:
         conn.rollback()
         return {'error': str(e)},500
+    
 @app.route('/expenses', methods=['GET'])
 def get_expenses():
     curr = conn.cursor()
@@ -96,11 +97,16 @@ def update_expense(expense_id):
 
 @app.route('/expenses/<int:expense_id>', methods=['DELETE'])
 def delete_expense(expense_id):
-    cur = conn.cursor()
-    cur.execute('DELETE FROM expenses WHERE id = %s', (expense_id))
-    conn.commit()
-    cur.close()
-    
-    return {'message': f'Expense {expense_id} has been deleted successfully!'}, 200
+    try:
+        cur = conn.cursor()
+        cur.execute('DELETE FROM expenses WHERE id = %s', (expense_id,))
+        conn.commit()
+        cur.close()
+        
+        return {'message': f'Expense {expense_id} has been deleted successfully!'}, 200
+    except Exception as e:
+        print("ERROR: ", e)
+        return {"error": str(e)}, 500
+
 if __name__ == '__main__':
     app.run()
