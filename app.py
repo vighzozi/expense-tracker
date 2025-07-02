@@ -1,5 +1,6 @@
 from flask import Flask, request, render_template
 import psycopg2
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # create Flask app
 app = Flask(__name__)
@@ -14,7 +15,7 @@ conn = psycopg2.connect(
 @app.route("/")
 def index():
     return render_template("index.html")
-
+ 
 @app.route('/expenses', methods=['POST'])
 def add_data():
     data = request.get_json(silent=True)
@@ -75,11 +76,14 @@ def update_expense(expense_id):
     data = request.get_json(silent=True)
     
     if not data:
-        return {'Error: No data has been provided'}, 400
+        return {'error': 'No data has been provided'}, 400
     
-    seller = data.get('seller'),
-    category = data.get('category'),
+    seller = data.get('seller')
+    category = data.get('category')
     amount = data.get('amount')
+    
+    if not all([seller, category, amount]):
+        return {'error': 'Missing one or more fields'}, 400
     
     cur = conn.cursor()
     cur.execute(
@@ -95,6 +99,7 @@ def update_expense(expense_id):
     
     return {'message': f'Expense {expense_id} updated'}, 200
 
+
 @app.route('/expenses/<int:expense_id>', methods=['DELETE'])
 def delete_expense(expense_id):
     try:
@@ -107,6 +112,48 @@ def delete_expense(expense_id):
     except Exception as e:
         print("ERROR: ", e)
         return {"error": str(e)}, 500
+
+@app.route('/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    print("Kapott adat:", data) 
+    username = data.get('username')
+    password = data.get('password')
+    
+    if not username or not password:
+        return {'ERROR: username and password required!'}, 400
+    
+    hashed_password = generate_password_hash(password)
+    cur = conn.cursor()
+    cur.execute('INSERT INTO users (username, password) VALUES (%s, %s)', (username, hashed_password))
+    conn.commit()
+    cur.close()
+    
+    return {'message': f'User {username} created successfully!'}, 201
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    
+    if not username or not password:
+        return {'ERROR: username and password required!'}, 400
+    
+    cur = conn.cursor()
+    cur.execute('SELECT * FROM users WHERE username = %s', (username,))
+    user = cur.fetchall()
+    cur.close()
+    
+    if not user:
+        return {'ERROR: Incorret username of password!'}, 401
+    
+    id, username, hashed_password = user
+    
+    if not check_password_hash(hashed_password, password):
+        return {'ERROR: Incorrect username or password!'}, 401
+    
+    return {f'Welcome back {username}!'}, 200
 
 if __name__ == '__main__':
     app.run()
