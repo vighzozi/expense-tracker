@@ -165,6 +165,37 @@ async function submitEdit() {
     }
   });
   
+  // login
+
+  const loginForm = document.getElementById("login-form");
+
+  loginForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+  
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+  
+    const response = await fetch("/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        username: username,
+        password: password
+      })
+    });
+  
+    const result = await response.json();
+    console.log(result);
+  
+    if (response.ok) {
+      alert("Successful login! 🎉");
+      loginForm.reset();
+    } else {
+      alert("ERROR: " + result.error || "Unknown error");
+    }
+  });
 window.onload = () => {
     loadExpense();
   };
