@@ -12,9 +12,22 @@ conn = psycopg2.connect(
     user="postgres",
     password="admin"
 )
-@app.route("/")
+
+@app.route('/')
+def welcome():
+    return render_template('welcome.html')
+
+@app.route('/registration')
+def registration():
+    return render_template('register.html')
+
+@app.route('/login-page')
+def login_page():
+    return render_template('login.html')
+
+@app.route('/dasboard')
 def index():
-    return render_template("index.html")
+    return render_template('index.html')
  
 @app.route('/expenses', methods=['POST'])
 def add_data():
@@ -130,6 +143,7 @@ def register():
     cur.close()
     
     return {'message': f'User {username} created successfully!'}, 201
+
 
 @app.route('/login', methods=['POST'])
 def login():
